@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Amazing Geometrical Keyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:        #12131C;
+  --bg-soft:   #181A26;
+  --panel:     rgba(20, 23, 36, 0.72);
+  --line:      rgba(0, 174, 255, 0.28);
+  --line-hi:   rgba(0, 242, 254, 0.55);
+  --cyan:      #00F2FE;
+  --purple:    #9B51E0;
+  --magenta:   #FF007F;
+  --text:      #C9D6E8;
+  --text-dim:  #66738C;
+  --font-ui:   'Rajdhani', 'Segoe UI', sans-serif;
+  --font-disp: 'Orbitron', 'Rajdhani', sans-serif;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  overflow-x:hidden;
+  min-height:100vh;
+}
+
+.bg-grid{
+  position:fixed; inset:-120px; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(0,174,255,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,174,255,0.045) 1px, transparent 1px),
+    linear-gradient(rgba(155,81,224,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(155,81,224,0.03) 1px, transparent 1px);
+  background-size: 48px 48px, 48px 48px, 240px 240px, 240px 240px;
+  animation: gridScroll 60s linear infinite;
+  mask-image: radial-gradient(ellipse at 50% 35%, #000 30%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 35%, #000 30%, transparent 85%);
+}
+@keyframes gridScroll{
+  from{ transform: translate3d(0,0,0); }
+  to  { transform: translate3d(48px,48px,0); }
+}
+@media (prefers-reduced-motion: reduce){
+  .bg-grid{ animation:none; }
+}
+
+main{
+  position:relative; z-index:1;
+  max-width:1060px; margin:0 auto; padding:26px 18px 48px;
+  display:flex; flex-direction:column; gap:16px;
+}
+header h1{
+  font-family:var(--font-disp);
+  font-size: clamp(15px, 2.4vw, 21px);
+  letter-spacing:.28em; font-weight:700; text-transform:uppercase;
+  color:#EAF6FF; text-align:center;
+  text-shadow: 0 0 14px rgba(0,242,254,.45), 0 0 42px rgba(155,81,224,.35);
+}
+
+.input-wrap{ display:flex; justify-content:center; }
+#txt{
+  width:min(680px, 100%);
+  background: rgba(10,12,20,.75);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:#EAF6FF;
+  font-family:var(--font-ui); font-weight:600;
+  font-size:17px; letter-spacing:.06em;
+  padding:13px 18px;
+  outline:none;
+  box-shadow: 0 0 0px rgba(0,242,254,0), inset 0 0 22px rgba(0,174,255,.05);
+  transition: box-shadow .25s ease, border-color .25s ease;
+}
+#txt::placeholder{ color:#3E4A63; letter-spacing:.12em; }
+#txt:focus{
+  border-color: var(--line-hi);
+  box-shadow: 0 0 18px rgba(0,242,254,.28), inset 0 0 22px rgba(0,174,255,.08);
+}
+
+.dash{
+  display:flex; flex-wrap:wrap; gap:12px;
+  align-items:center; justify-content:center;
+  background: var(--panel);
+  border:1px solid rgba(0,174,255,.14);
+  border-radius:14px;
+  padding:12px 16px;
+  backdrop-filter: blur(6px);
+}
+.ctl-label{
+  font-size:10px; letter-spacing:.24em; color:var(--text-dim);
+  text-transform:uppercase; display:block; margin-bottom:5px; text-align:center;
+}
+.ctl{ display:flex; flex-direction:column; align-items:center; }
+
+.seg{
+  display:flex; border:1px solid var(--line); border-radius:9px; overflow:hidden;
+  background: rgba(8,10,18,.6);
+}
+.seg button{
+  appearance:none; border:0; background:transparent;
+  color:var(--text-dim); cursor:pointer;
+  font-family:var(--font-ui); font-weight:700; font-size:12px;
+  letter-spacing:.14em; text-transform:uppercase;
+  padding:8px 13px;
+  transition: color .2s, background .2s, box-shadow .2s;
+  border-right:1px solid rgba(0,174,255,.12);
+}
+.seg button:last-child{ border-right:0; }
+.seg button:hover{ color:var(--text); }
+.seg button.on{
+  color:#04141A;
+  background: linear-gradient(135deg, var(--cyan), #35c7ff);
+  box-shadow: 0 0 14px rgba(0,242,254,.45);
+}
+.seg button:focus-visible{ outline:2px solid var(--cyan); outline-offset:-2px; }
+
+.slider-ctl{ min-width:190px; }
+.slider-row{ display:flex; align-items:center; gap:10px; }
+#speed, #zscale{
+  appearance:none; -webkit-appearance:none;
+  width:140px; height:4px; border-radius:4px;
+  background: linear-gradient(90deg, var(--cyan), var(--purple), var(--magenta));
+  outline:none; cursor:pointer;
+}
+#speed::-webkit-slider-thumb, #zscale::-webkit-slider-thumb{
+  -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
+  background:#EAF6FF; border:2px solid var(--cyan);
+  box-shadow:0 0 10px rgba(0,242,254,.8); cursor:pointer;
+}
+#speed::-moz-range-thumb, #zscale::-moz-range-thumb{
+  width:14px; height:14px; border-radius:50%;
+  background:#EAF6FF; border:2px solid var(--cyan);
+  box-shadow:0 0 10px rgba(0,242,254,.8); cursor:pointer;
+}
+#speedVal, #zscaleVal{
+  font-family:var(--font-disp); font-size:12px; color:var(--cyan);
+  min-width:58px; text-align:left; letter-spacing:.08em;
+}
+#speedVal, #zscaleVal{
+  background:transparent; border:1px solid transparent;
+  border-radius:5px; padding:2px 6px; width:64px;
+  outline:none; cursor:pointer;
+  transition: border-color .2s, background .2s;
+}
+#speedVal:hover, #zscaleVal:hover{ border-color: rgba(0,242,254,.35); }
+#speedVal:focus, #zscaleVal:focus{
+  border-color: var(--cyan); background: rgba(0,10,20,.6);
+  cursor:text;
+}
+
+.btn{
+  appearance:none; cursor:pointer; border-radius:10px;
+  font-family:var(--font-disp); font-weight:700; font-size:12px;
+  letter-spacing:.22em; text-transform:uppercase;
+  padding:11px 20px;
+  transition: transform .12s ease, box-shadow .2s ease, background .2s, color .2s;
+}
+.btn:active{ transform: translateY(1px) scale(.98); }
+.btn:focus-visible{ outline:2px solid var(--cyan); outline-offset:2px; }
+#btnGen{
+  border:0; color:#06060C;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 55%, var(--magenta) 100%);
+  box-shadow: 0 0 18px rgba(0,242,254,.4), 0 0 34px rgba(255,0,127,.25);
+}
+#btnGen:hover{ box-shadow: 0 0 26px rgba(0,242,254,.65), 0 0 48px rgba(255,0,127,.4); }
+#btn3d{
+  background:transparent; color:var(--purple);
+  border:1px solid rgba(155,81,224,.6);
+  box-shadow: inset 0 0 14px rgba(155,81,224,.1);
+}
+#btn3d:hover{ background:rgba(155,81,224,.12); box-shadow:0 0 16px rgba(155,81,224,.4); color:#C79BF0; }
+#btnKb{
+  background:transparent; color:var(--text-dim);
+  border:1px solid rgba(0,174,255,.25);
+  font-size:11px; padding:9px 14px;
+}
+#btnKb:hover{ color:var(--cyan); border-color:var(--line-hi); }
+#btnKb.on{ color:var(--cyan); border-color:var(--line-hi);
+  box-shadow: inset 0 0 12px rgba(0,242,254,.1); }
+
+/* Hide keyboard keys */
+.workspace.hide-keys .key{ opacity:0; pointer-events:none; }
+
+.workspace{
+  position:relative;
+  border:1px solid rgba(0,174,255,.14);
+  border-radius:16px;
+  background: rgba(12,14,24,.5);
+  overflow:hidden;
+}
+.stage-scale{
+  transform-origin: top center;
+  display:flex; justify-content:center;
+  transition: opacity .5s ease;
+  padding-top:0;
+}
+.stage{ position:relative; }
+.key{
+  position:absolute;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background: rgba(8,10,18,.35);
+  color:#8FA5C4;
+  font-family:var(--font-ui); font-weight:600; font-size:15px;
+  letter-spacing:.05em;
+  display:flex; align-items:center; justify-content:center;
+  user-select:none;
+  transition: background .65s ease, box-shadow .65s ease, color .65s ease, border-color .65s ease;
+}
+.key.flash{
+  transition:none;
+  background: var(--cyan);
+  border-color:#BFFBFF;
+  color:#03141A;
+  box-shadow: 0 0 16px rgba(0,242,254,.9), 0 0 42px rgba(0,242,254,.45);
+}
+#cv{ position:absolute; inset:0; pointer-events:none; }
+
+#stage3d{
+  position:absolute; inset:0; z-index:5;
+  opacity:0; pointer-events:none;
+  transition: opacity .5s ease;
+  background: radial-gradient(ellipse at 50% 20%, #171a2b 0%, #0d0e17 70%);
+}
+.workspace.mode3d #stage3d{ opacity:1; pointer-events:auto; }
+.workspace.mode3d .stage-scale{ opacity:0; }
+.ctl-3d{
+  position:absolute; top:14px; right:16px; z-index:10;
+  background: rgba(12,14,24,.75);
+  border:1px solid rgba(0,174,255,.2);
+  border-radius:10px;
+  padding:10px 16px 10px 14px;
+  backdrop-filter: blur(6px);
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+
+<main>
+  <header>
+    <h1>The Amazing Geometrical Keyboard</h1>
+  </header>
+
+  <div class="input-wrap">
+    <input id="txt" type="text" spellcheck="false" autocomplete="off"
+           placeholder="Type or paste here..." aria-label="Text to trace" />
+  </div>
+
+  <div class="dash">
+    <div class="ctl">
+      <span class="ctl-label">Spacebar Mode</span>
+      <div class="seg" id="segSpace" role="group" aria-label="Spacebar mode">
+        <button type="button" data-v="anchor" class="on">Anchor</button>
+        <button type="button" data-v="split">Split</button>
+        <button type="button" data-v="linked">Linked</button>
+      </div>
+    </div>
+
+    <div class="ctl">
+      <span class="ctl-label">Coloring Mode</span>
+      <div class="seg" id="segColor" role="group" aria-label="Coloring mode">
+        <button type="button" data-v="fixed" class="on">Fixed Scale</button>
+        <button type="button" data-v="growth">Growth Scale</button>
+        <button type="button" data-v="white">Pure White</button>
+      </div>
+    </div>
+
+    <div class="ctl slider-ctl">
+      <span class="ctl-label">Drawing Speed</span>
+      <div class="slider-row">
+        <input type="range" id="speed" min="1" max="31" step="1" value="15" aria-label="Drawing speed" />
+        <input type="text" id="speedVal" value="15" aria-label="Speed value" />
+      </div>
+    </div>
+
+    <button class="btn" id="btnGen">Generate</button>
+    <button class="btn" id="btn3d">View in 3D</button>
+    <button class="btn" id="btnKb">Hide Keys</button>
+  </div>
+
+  <div class="workspace" id="workspace">
+    <div class="stage-scale" id="stageScale">
+      <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+    </div>
+    <div id="stage3d" aria-label="3D view">
+      <div class="ctl slider-ctl ctl-3d" id="zscaleWrap">
+        <span class="ctl-label">3D Height</span>
+        <div class="slider-row">
+          <input type="range" id="zscale" min="0" max="400" step="5" value="100" aria-label="3D height scale" />
+          <input type="text" id="zscaleVal" value="1.0×" aria-label="Height value" />
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Three.js core (r128) + OrbitControls via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three-orbitcontrols/2.110.3/OrbitControls.min.js"></script>
+
+<script>
+"use strict";
+/* ================================================================
+   3D CYBERPUNK KEYBOARD GEOMETRY SIMULATOR
+   Modules:
+     1. Layout      — QWERTY coordinate map + DOM key build
+     2. PathEngine  — text -> subpaths with cumulative distances
+     3. Color       — cyan -> purple -> magenta gradient sampler
+     4. Render2D    — constant-velocity canvas tracer + key flashes
+     5. Render3D    — Three.js tube sculpture + orbit camera
+     6. App         — controls, master rAF loop, view transitions
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   1. LAYOUT
+   ---------------------------------------------------------------- */
+const UNIT = 68, KEY = 58, PAD = 30;
+const ROWS = [
+  { keys: "1234567890-=", off: 0    },
+  { keys: "qwertyuiop[]", off: 0.5  },
+  { keys: "asdfghjkl;'",  off: 0.75 },
+  { keys: "zxcvbnm,./",   off: 1.25 },
+];
+const SPACE = { off: 3.0, row: 4, widthUnits: 6 };
+const STAGE_W = PAD * 2 + Math.ceil(UNIT * 12);           // 876
+const STAGE_H = PAD * 2 + UNIT * 5;                       // 400
+
+const SHIFT_MAP = {
+  "!":"1","@":"2","#":"3","$":"4","%":"5","^":"6","&":"7","*":"8","(":"9",")":"0",
+  "_":"-","+":"=","{":"[","}":"]",":":";","\"":"'","<":",",">":".","?":"/"
+};
+
+const keyMap = {};   // char -> { x, y, el }
+let spaceKey = null; // { x, y, el }
+
+function buildKeyboardDOM() {
+  const stage = document.getElementById("stage");
+  stage.style.width  = STAGE_W + "px";
+  stage.style.height = STAGE_H + "px";
+
+  const makeKey = (label, x, y, w) => {
+    const el = document.createElement("div");
+    el.className = "key";
+    el.textContent = label;
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+    el.style.width = w + "px";
+    el.style.height = KEY + "px";
+    stage.insertBefore(el, document.getElementById("cv"));
+    return el;
+  };
+
+  ROWS.forEach((row, r) => {
+    [...row.keys].forEach((ch, c) => {
+      const x = PAD + (row.off + c) * UNIT;
+      const y = PAD + r * UNIT;
+      const el = makeKey(ch.toUpperCase(), x, y, KEY);
+      keyMap[ch] = { x: x + KEY / 2, y: y + KEY / 2, el };
+    });
+  });
+
+  const sw = SPACE.widthUnits * UNIT - (UNIT - KEY);
+  const sx = PAD + SPACE.off * UNIT;
+  const sy = PAD + SPACE.row * UNIT;
+  const sel = makeKey("", sx, sy, sw);
+  spaceKey = { x: sx + sw / 2, y: sy + KEY / 2, el: sel };
+}
+
+function mapChar(ch) {
+  const c = ch.toLowerCase();
+  if (keyMap[c]) return keyMap[c];
+  if (SHIFT_MAP[ch] && keyMap[SHIFT_MAP[ch]]) return keyMap[SHIFT_MAP[ch]];
+  return null;
+}
+
+/* ----------------------------------------------------------------
+   2. PATH ENGINE
+   Builds: subpaths[] of points {x, y, zi, cum, el}
+     zi  = character index in the source string (drives 3D height)
+     cum = cumulative arc distance (px) across ALL subpaths
+   ---------------------------------------------------------------- */
+const EPS = 0.5;
+let subpaths = [];
+let flatPoints = [];
+let totalLen = 0;
+
+function buildPath(text, spaceMode) {
+  subpaths = []; flatPoints = []; totalLen = 0;
+  let cur = [], cum = 0, prev = null;
+
+  const pushPoint = (x, y, zi, el) => {
+    if (prev) cum += Math.hypot(x - prev.x, y - prev.y);
+    const p = { x, y, zi, cum, el };
+    cur.push(p); flatPoints.push(p); prev = p;
+  };
+  const closeSub = () => {
+    if (cur.length) subpaths.push(cur);
+    cur = []; prev = null; // subpath gaps are traversed instantly (zero length)
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === " ") {
+      if (spaceMode === "anchor")      pushPoint(spaceKey.x, spaceKey.y, i, spaceKey.el);
+      else if (spaceMode === "split")  closeSub();
+      /* linked: ignore entirely */
+      continue;
+    }
+    const k = mapChar(ch);
+    if (k) pushPoint(k.x, k.y, i, k.el);
+  }
+  closeSub();
+  totalLen = flatPoints.length ? flatPoints[flatPoints.length - 1].cum : 0;
+}
+
+/* Iterate the visible portion of the path for a given progress.
+   cb(a, b, d1, d2)  — b === null means an isolated visible point. */
+function forVisible(progress, cb) {
+  for (const sub of subpaths) {
+    if (!sub.length) continue;
+    if (sub[0].cum > progress + EPS) continue;
+    if (sub.length === 1) { cb(sub[0], null, sub[0].cum, sub[0].cum); continue; }
+    let drewSeg = false;
+    for (let j = 1; j < sub.length; j++) {
+      const a = sub[j - 1], b = sub[j];
+      if (a.cum > progress + EPS) break;
+      if (b.cum <= progress + EPS) { cb(a, b, a.cum, b.cum); drewSeg = true; }
+      else {
+        const f = (progress - a.cum) / Math.max(b.cum - a.cum, 1e-9);
+        const tip = {
+          x: a.x + (b.x - a.x) * f,
+          y: a.y + (b.y - a.y) * f,
+          zi: a.zi + (b.zi - a.zi) * f,
+          cum: progress
+        };
+        cb(a, tip, a.cum, progress); drewSeg = true; break;
+      }
+    }
+    if (!drewSeg) cb(sub[0], null, sub[0].cum, sub[0].cum);
+  }
+}
+
+/* ----------------------------------------------------------------
+   3. COLOR — Neon Cyan -> Royal Purple -> Electric Magenta
+   ---------------------------------------------------------------- */
+const C_CYAN = [0, 242, 254], C_PURP = [155, 81, 224], C_MAG = [255, 0, 127];
+const C_WHITE = [255, 255, 255];
+function lerp(a, b, t) { return a + (b - a) * t; }
+function gradRGB(t) {
+  if (state.coloring === "white") return C_WHITE;
+  t = Math.min(1, Math.max(0, t));
+  const [A, B, f] = t < 0.5 ? [C_CYAN, C_PURP, t * 2] : [C_PURP, C_MAG, (t - 0.5) * 2];
+  return [lerp(A[0], B[0], f), lerp(A[1], B[1], f), lerp(A[2], B[2], f)];
+}
+function gradCSS(t) {
+  if (state.coloring === "white") return "#FFFFFF";
+  const [r, g, b] = gradRGB(t);
+  return `rgb(${r | 0},${g | 0},${b | 0})`;
+}
+
+/* ----------------------------------------------------------------
+   4. RENDER 2D
+   ---------------------------------------------------------------- */
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+let progress = 0;
+let animating = false;
+let flashIdx = 0;
+
+function flashKey(el) {
+  el.classList.add("flash");
+  // independent transition: snap on, fade back off
+  setTimeout(() => el.classList.remove("flash"), 90);
+}
+function fireFlashes() {
+  while (flashIdx < flatPoints.length && flatPoints[flashIdx].cum <= progress + EPS) {
+    flashKey(flatPoints[flashIdx].el);
+    flashIdx++;
+  }
+}
+
+function colorDenominator() {
+  return (state.coloring === "fixed")
+    ? Math.max(totalLen, 1e-6)
+    : Math.max(progress, 1e-6);
+}
+
+function draw2D() {
+  ctx.clearRect(0, 0, STAGE_W, STAGE_H);
+  if (!flatPoints.length) return;
+  const den = colorDenominator();
+
+  /* Pass 1 — bloom under-glow (single stroke, heavy shadow) */
+  const isWhite = state.coloring === "white";
+  ctx.save();
+  ctx.lineWidth = 6; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.shadowColor = isWhite ? "#FFFFFF" : "#FF007F";
+  ctx.shadowBlur = 15;
+  ctx.strokeStyle = isWhite ? "rgba(255,255,255,0.30)" : "rgba(255,0,127,0.30)";
+  ctx.beginPath();
+  forVisible(progress, (a, b) => {
+    if (!b) { ctx.moveTo(a.x + 0.01, a.y); ctx.lineTo(a.x, a.y); return; }
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  });
+  ctx.stroke();
+  ctx.restore();
+
+  /* Pass 2 — gradient core, chunked for smooth blending */
+  ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  let tip = null;
+  forVisible(progress, (a, b, d1, d2) => {
+    if (!b) {
+      ctx.fillStyle = gradCSS(d1 / den);
+      ctx.beginPath(); ctx.arc(a.x, a.y, 3.5, 0, Math.PI * 2); ctx.fill();
+      tip = a; return;
+    }
+    const segLen = d2 - d1;
+    const n = Math.max(1, Math.ceil(segLen / 8));
+    for (let k = 0; k < n; k++) {
+      const t0 = k / n, t1 = (k + 1) / n;
+      ctx.strokeStyle = gradCSS((d1 + (k + 0.5) / n * segLen) / den);
+      ctx.beginPath();
+      ctx.moveTo(lerp(a.x, b.x, t0), lerp(a.y, b.y, t0));
+      ctx.lineTo(lerp(a.x, b.x, t1), lerp(a.y, b.y, t1));
+      ctx.stroke();
+    }
+    tip = b;
+  });
+
+  /* Bright tracer tip while animating */
+  if (animating && tip) {
+    ctx.save();
+    ctx.shadowColor = "#FF007F"; ctx.shadowBlur = 18;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath(); ctx.arc(tip.x, tip.y, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* ----------------------------------------------------------------
+   5. RENDER 3D
+   ---------------------------------------------------------------- */
+const W_SCALE = 40;      // px per world unit
+const Z_STEP  = 0.32;    // vertical rise per character index
+const BASE_Y  = 0.12;
+
+let three = null;        // lazy-initialized bundle
+
+function toWorld(p) {
+  return new THREE.Vector3(
+    (p.x - STAGE_W / 2) / W_SCALE,
+    BASE_Y + p.zi * Z_STEP * state.zFactor,
+    (p.y - STAGE_H / 2) / W_SCALE
+  );
+}
+
+/* Minimal orbit fallback in case CDN OrbitControls is unavailable */
+class SimpleOrbit {
+  constructor(camera, dom) {
+    this.camera = camera; this.target = new THREE.Vector3(0, 3, 0);
+    this.sph = new THREE.Spherical().setFromVector3(
+      camera.position.clone().sub(this.target));
+    this.dragging = false; this.px = 0; this.py = 0;
+    dom.addEventListener("pointerdown", e => {
+      this.dragging = true; this.px = e.clientX; this.py = e.clientY;
+      dom.setPointerCapture(e.pointerId);
+    });
+    dom.addEventListener("pointermove", e => {
+      if (!this.dragging) return;
+      this.sph.theta -= (e.clientX - this.px) * 0.006;
+      this.sph.phi   -= (e.clientY - this.py) * 0.006;
+      this.sph.phi = Math.min(Math.PI - 0.08, Math.max(0.08, this.sph.phi));
+      this.px = e.clientX; this.py = e.clientY;
+    });
+    dom.addEventListener("pointerup", () => this.dragging = false);
+    dom.addEventListener("wheel", e => {
+      e.preventDefault();
+      this.sph.radius = Math.min(90, Math.max(6, this.sph.radius * (1 + e.deltaY * 0.001)));
+    }, { passive: false });
+  }
+  update() {
+    this.camera.position.setFromSpherical(this.sph).add(this.target);
+    this.camera.lookAt(this.target);
+  }
+}
+
+function init3D() {
+  const box = document.getElementById("stage3d");
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0d0e17, 0.012);
+
+  const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 300);
+  camera.position.set(9, 8, 12);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  box.appendChild(renderer.domElement);
+
+  let controls;
+  if (THREE.OrbitControls) {
+    try {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 3, 0);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.08;
+      controls.minDistance = 6; controls.maxDistance = 90;
+    } catch (e) { controls = null; }
+  }
+  if (!controls) controls = new SimpleOrbit(camera, renderer.domElement);
+
+  /* Reference floor — grouped for hide-keys toggle */
+  const kbGroup = new THREE.Group();
+  scene.add(kbGroup);
+
+  const grid = new THREE.GridHelper(34, 34, 0x28477a, 0x18233c);
+  grid.position.y = -0.02;
+  kbGroup.add(grid);
+
+  /* Flat keyboard reference plane at Z = 0 (world floor) */
+  const kbMat = new THREE.LineBasicMaterial({ color: 0x2fa8ff, transparent: true, opacity: 0.4 });
+  const addRect = (cx, cy, w, h) => {
+    const x0 = (cx - w / 2 - STAGE_W / 2) / W_SCALE, x1 = (cx + w / 2 - STAGE_W / 2) / W_SCALE;
+    const z0 = (cy - h / 2 - STAGE_H / 2) / W_SCALE, z1 = (cy + h / 2 - STAGE_H / 2) / W_SCALE;
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(x0, 0, z0), new THREE.Vector3(x1, 0, z0),
+      new THREE.Vector3(x1, 0, z1), new THREE.Vector3(x0, 0, z1)
+    ]);
+    kbGroup.add(new THREE.LineLoop(g, kbMat));
+  };
+  for (const ch in keyMap) addRect(keyMap[ch].x, keyMap[ch].y, KEY, KEY);
+  addRect(spaceKey.x, spaceKey.y, SPACE.widthUnits * UNIT - (UNIT - KEY), KEY);
+
+  /* Apply current hide-keys state */
+  kbGroup.visible = !workspace.classList.contains("hide-keys");
+
+  const tubeGroup = new THREE.Group();
+  scene.add(tubeGroup);
+
+  const coreMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const glowMat = new THREE.MeshBasicMaterial({
+    vertexColors: true, transparent: true, opacity: 0.22,
+    blending: THREE.AdditiveBlending, depthWrite: false
+  });
+
+  three = { scene, camera, renderer, controls, tubeGroup, kbGroup, coreMat, glowMat, box, lastBuilt: -1 };
+  resize3D();
+}
+
+function resize3D() {
+  if (!three) return;
+  const w = three.box.clientWidth || 1, h = three.box.clientHeight || 1;
+  three.renderer.setSize(w, h);
+  three.camera.aspect = w / h;
+  three.camera.updateProjectionMatrix();
+}
+
+function clearTubes() {
+  const g = three.tubeGroup;
+  while (g.children.length) {
+    const m = g.children.pop();
+    if (m.geometry) m.geometry.dispose();
+    if (m.userData.ownMat && m.material) m.material.dispose();
+  }
+}
+
+function paintTube(geo, tubularSegments, radialSegments, d0, d1, den) {
+  const count = geo.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const ringVerts = radialSegments + 1;
+  for (let i = 0; i < count; i++) {
+    const ring = Math.min(tubularSegments, Math.floor(i / ringVerts));
+    const t = tubularSegments ? ring / tubularSegments : 0;
+    const [r, g, b] = gradRGB((d0 + t * (d1 - d0)) / den);
+    colors[i * 3] = r / 255; colors[i * 3 + 1] = g / 255; colors[i * 3 + 2] = b / 255;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+}
+
+function rebuild3D() {
+  if (!three) return;
+  clearTubes();
+  if (!flatPoints.length) return;
+  const den = colorDenominator();
+  const RADIAL = 10;
+
+  /* Collect visible world-space points per subpath */
+  const subVis = [];
+  let cursor = null;
+  forVisible(progress, (a, b, d0, d1) => {
+    if (!b) { subVis.push({ pts: [toWorld(a)], dists: [d0] }); cursor = null; return; }
+    if (!cursor || cursor.lastD !== d0 || cursor.lastPt.distanceTo(toWorld(a)) > 1e-4) {
+      cursor = { pts: [toWorld(a), toWorld(b)], dists: [d0, d1],
+                 lastD: d1, lastPt: toWorld(b) };
+      subVis.push(cursor);
+    } else {
+      cursor.pts.push(toWorld(b)); cursor.dists.push(d1);
+      cursor.lastD = d1; cursor.lastPt = toWorld(b);
+    }
+  });
+
+  for (const sv of subVis) {
+    const { pts, dists } = sv;
+    if (pts.length < 2 || dists[dists.length - 1] - dists[0] < 0.5) {
+      /* isolated point -> small glowing node */
+      const sg = new THREE.SphereGeometry(0.16, 10, 10);
+      const mat = new THREE.MeshBasicMaterial({ color: gradCSS(dists[0] / den) });
+      const s = new THREE.Mesh(sg, mat);
+      s.position.copy(pts[0]);
+      s.userData.ownMat = true;
+      three.tubeGroup.add(s);
+      continue;
+    }
+    const path = new THREE.CurvePath();
+    for (let i = 1; i < pts.length; i++) {
+      if (pts[i - 1].distanceTo(pts[i]) < 1e-5) continue;
+      path.add(new THREE.LineCurve3(pts[i - 1], pts[i]));
+    }
+    if (!path.curves.length) continue;
+    const visLen = dists[dists.length - 1] - dists[0];
+    const tubular = Math.min(700, Math.max(4, Math.round(visLen / 6)));
+    const geo = new THREE.TubeGeometry(path, tubular, 0.13, RADIAL, false);
+    paintTube(geo, tubular, RADIAL, dists[0], dists[dists.length - 1], den);
+    three.tubeGroup.add(new THREE.Mesh(geo, three.coreMat));
+
+    const glowGeo = new THREE.TubeGeometry(path, tubular, 0.26, RADIAL, false);
+    paintTube(glowGeo, tubular, RADIAL, dists[0], dists[dists.length - 1], den);
+    three.tubeGroup.add(new THREE.Mesh(glowGeo, three.glowMat));
+  }
+  three.lastBuilt = progress;
+}
+
+/* ----------------------------------------------------------------
+   6. APP — state, controls, master loop
+   ---------------------------------------------------------------- */
+const state = {
+  spaceMode: "anchor",
+  coloring: "fixed",
+  text: "",
+  view3d: false,
+  zFactor: 1.0           // 3D height compression/extension multiplier
+};
+
+const $ = id => document.getElementById(id);
+const workspace = $("workspace");
+let dirty = false;
+
+function speedPxPerSec() {
+  const s = Number($("speed").value);
+  if (s >= 31) return Infinity;        // INSTANT
+  // Base speed 60 px/s at level 1, each step 1.25× faster
+  return 60 * Math.pow(1.25, s - 1);
+}
+
+function generate() {
+  state.text = $("txt").value;
+  if (!state.text) { subpaths = []; flatPoints = []; totalLen = 0; dirty = true; return; }
+  buildPath(state.text, state.spaceMode);
+  progress = 0; flashIdx = 0;
+
+  if (Number($("speed").value) >= 31) {
+    /* Instant mode — full geometry in a single frame */
+    progress = totalLen;
+    animating = false;
+    fireFlashes();
+  } else {
+    animating = true;
+  }
+  dirty = true;
+  if (three) three.lastBuilt = -1;
+}
+
+/* Segmented controls */
+function wireSeg(id, onPick) {
+  const seg = $(id);
+  seg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    seg.querySelectorAll("button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    onPick(b.dataset.v);
+  });
+}
+wireSeg("segSpace", v => { state.spaceMode = v; });
+wireSeg("segColor", v => { state.coloring = v; dirty = true; if (three) three.lastBuilt = -1; });
+
+/* Speed — two-way sync between slider and editable number input */
+function syncSpeedDisplay(v) {
+  $("speedVal").value = v >= 31 ? "INSTANT" : String(v);
+}
+$("speed").addEventListener("input", () => {
+  syncSpeedDisplay(Number($("speed").value));
+});
+/* Editable speed input: accept 1-30 or 31=instant */
+$("speedVal").addEventListener("focus", () => {
+  const v = Number($("speed").value);
+  if (v >= 31) $("speedVal").value = "31";
+  $("speedVal").select();
+});
+$("speedVal").addEventListener("blur", () => {
+  let v = parseInt($("speedVal").value, 10);
+  if (isNaN(v) || v < 1)  v = 1;
+  if (v > 31) v = 31;
+  $("speed").value = v;
+  syncSpeedDisplay(v);
+});
+$("speedVal").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); $("speedVal").blur(); }
+});
+syncSpeedDisplay(Number($("speed").value));
+
+$("btnGen").addEventListener("click", generate);
+$("txt").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); generate(); }
+});
+$("btn3d").addEventListener("click", () => {
+  state.view3d = !state.view3d;
+  if (state.view3d && !three) init3D();
+  workspace.classList.toggle("mode3d", state.view3d);
+  $("btn3d").textContent = state.view3d ? "View in 2D" : "View in 3D";
+  if (state.view3d) { resize3D(); if (three) three.lastBuilt = -1; }
+  dirty = true;
+});
+
+/* Hide keyboard toggle */
+$("btnKb").addEventListener("click", () => {
+  workspace.classList.toggle("hide-keys");
+  const hidden = workspace.classList.contains("hide-keys");
+  $("btnKb").textContent = hidden ? "Show Keys" : "Hide Keys";
+  $("btnKb").classList.toggle("on", hidden);
+  if (three && three.kbGroup) three.kbGroup.visible = !hidden;
+  dirty = true;
+});
+
+/* 3D height — two-way sync between slider and editable input.
+   Slider snaps to 0.05× increments (step=5 on a 0-400 range = 0.00–4.00×).
+   Text input accepts ANY value ≥ 0 with full precision. */
+function syncZDisplay(factor) {
+  // Show 2 decimals to reflect 0.05 precision, trim trailing 0 after decimal
+  $("zscaleVal").value = factor.toFixed(2).replace(/\.?0+$/, "") + "×";
+}
+function applyZ(factor) {
+  state.zFactor = factor;
+  syncZDisplay(factor);
+  // Snap slider to nearest 0.05 within its range; values beyond slider max just pin it
+  $("zscale").value = Math.min(400, Math.max(0, Math.round(factor * 100 / 5) * 5));
+  if (three) three.lastBuilt = -1;
+  dirty = true;
+}
+$("zscale").addEventListener("input", () => {
+  applyZ(Number($("zscale").value) / 100);
+});
+$("zscaleVal").addEventListener("focus", () => {
+  // Show raw multiplier number for easy editing
+  $("zscaleVal").value = state.zFactor.toFixed(2).replace(/\.?0+$/, "");
+  $("zscaleVal").select();
+});
+$("zscaleVal").addEventListener("blur", () => {
+  let raw = $("zscaleVal").value.replace(/[×x]/gi, "").trim();
+  let v = parseFloat(raw);
+  if (isNaN(v) || v < 0) v = 0;
+  applyZ(v);
+});
+$("zscaleVal").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); $("zscaleVal").blur(); }
+});
+
+/* Responsive stage scaling */
+function layout() {
+  const avail = workspace.clientWidth - 8;
+  const scale = Math.min(1, avail / STAGE_W);
+  $("stageScale").style.transform = `scale(${scale})`;
+  workspace.style.height = Math.round(STAGE_H * scale) + "px";
+  resize3D();
+}
+window.addEventListener("resize", layout);
+
+/* Master animation loop */
+let lastTs = performance.now();
+function loop(ts) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, (ts - lastTs) / 1000);
+  lastTs = ts;
+
+  if (animating) {
+    const v = speedPxPerSec();
+    progress = (v === Infinity) ? totalLen : progress + v * dt;
+    if (progress >= totalLen) { progress = totalLen; animating = false; }
+    fireFlashes();
+    dirty = true;
+  }
+
+  if (dirty && !state.view3d) draw2D();
+
+  if (state.view3d && three) {
+    if (dirty || three.lastBuilt !== progress) rebuild3D();
+    three.controls.update();
+    three.renderer.render(three.scene, three.camera);
+  }
+  dirty = false;
+}
+
+/* Boot */
+buildKeyboardDOM();
+cv.width = STAGE_W; cv.height = STAGE_H;
+layout();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
