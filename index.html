@@ -184,9 +184,57 @@ header h1{
 #btnKb:hover{ color:var(--cyan); border-color:var(--line-hi); }
 #btnKb.on{ color:var(--cyan); border-color:var(--line-hi);
   box-shadow: inset 0 0 12px rgba(0,242,254,.1); }
+#btnTxt{
+  background:transparent; color:var(--text-dim);
+  border:1px solid rgba(0,174,255,.25);
+  font-size:11px; padding:9px 14px;
+}
+#btnTxt:hover{ color:var(--cyan); border-color:var(--line-hi); }
+#btnTxt.on{ color:var(--cyan); border-color:var(--line-hi);
+  box-shadow: inset 0 0 12px rgba(0,242,254,.1); }
+#btnFade{
+  background:transparent; color:var(--text-dim);
+  border:1px solid rgba(0,174,255,.25);
+  font-size:11px; padding:9px 14px;
+}
+#btnFade:hover{ color:var(--cyan); border-color:var(--line-hi); }
+#btnFade.on{ color:var(--cyan); border-color:var(--line-hi);
+  box-shadow: inset 0 0 12px rgba(0,242,254,.1); }
 
-/* Hide keyboard keys */
+/* Fade-out effect after animation completes */
+.workspace.faded .key{
+  opacity:0 !important; transition: opacity 1.2s ease !important;
+}
+.workspace.faded .text-overlay{
+  opacity:0; transition: opacity 1.2s ease;
+}
+body.faded .bg-grid{
+  opacity:0; transition: opacity 1.2s ease;
+}
+
+/* Text overlay */
+.text-overlay{
+  display:none;
+  text-align:center;
+  padding:10px 16px 6px;
+  font-family:var(--font-disp); font-size:26px;
+  letter-spacing:.12em; color:var(--cyan);
+  min-height:36px;
+  text-shadow: 0 0 10px rgba(0,242,254,.5);
+  word-break:break-all;
+}
+.text-overlay.visible{ display:block; }
+.workspace.mode3d .text-overlay{ display:none; }
+.text-overlay .char{
+  display:inline-block;
+  opacity:0;
+  transition: opacity .15s ease;
+}
+.text-overlay .char.show{ opacity:1; }
+
+/* Hide keyboard keys + background grid */
 .workspace.hide-keys .key{ opacity:0; pointer-events:none; }
+body.hide-keys .bg-grid{ opacity:0; }
 
 .workspace{
   position:relative;
@@ -198,7 +246,7 @@ header h1{
 .stage-scale{
   transform-origin: top center;
   display:flex; justify-content:center;
-  transition: opacity .5s ease;
+  transition: opacity .3s ease;
   padding-top:0;
 }
 .stage{ position:relative; }
@@ -226,7 +274,7 @@ header h1{
 #stage3d{
   position:absolute; inset:0; z-index:5;
   opacity:0; pointer-events:none;
-  transition: opacity .5s ease;
+  transition: opacity .3s ease;
   background: radial-gradient(ellipse at 50% 20%, #171a2b 0%, #0d0e17 70%);
 }
 .workspace.mode3d #stage3d{ opacity:1; pointer-events:auto; }
@@ -285,9 +333,12 @@ header h1{
     <button class="btn" id="btnGen">Generate</button>
     <button class="btn" id="btn3d">View in 3D</button>
     <button class="btn" id="btnKb">Hide Keys</button>
+    <button class="btn" id="btnTxt">Show Text</button>
+    <button class="btn" id="btnFade">Fade</button>
   </div>
 
   <div class="workspace" id="workspace">
+    <div class="text-overlay" id="textOverlay"></div>
     <div class="stage-scale" id="stageScale">
       <div class="stage" id="stage"><canvas id="cv"></canvas></div>
     </div>
@@ -397,26 +448,26 @@ function buildPath(text, spaceMode) {
   subpaths = []; flatPoints = []; totalLen = 0;
   let cur = [], cum = 0, prev = null;
 
-  const pushPoint = (x, y, zi, el) => {
+  const pushPoint = (x, y, zi, el, ch) => {
     if (prev) cum += Math.hypot(x - prev.x, y - prev.y);
-    const p = { x, y, zi, cum, el };
+    const p = { x, y, zi, cum, el, ch };
     cur.push(p); flatPoints.push(p); prev = p;
   };
   const closeSub = () => {
     if (cur.length) subpaths.push(cur);
-    cur = []; prev = null; // subpath gaps are traversed instantly (zero length)
+    cur = []; prev = null;
   };
 
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
     if (ch === " ") {
-      if (spaceMode === "anchor")      pushPoint(spaceKey.x, spaceKey.y, i, spaceKey.el);
+      if (spaceMode === "anchor")      pushPoint(spaceKey.x, spaceKey.y, i, spaceKey.el, " ");
       else if (spaceMode === "split")  closeSub();
       /* linked: ignore entirely */
       continue;
     }
     const k = mapChar(ch);
-    if (k) pushPoint(k.x, k.y, i, k.el);
+    if (k) pushPoint(k.x, k.y, i, k.el, ch);
   }
   closeSub();
   totalLen = flatPoints.length ? flatPoints[flatPoints.length - 1].cum : 0;
@@ -478,12 +529,17 @@ let flashIdx = 0;
 
 function flashKey(el) {
   el.classList.add("flash");
-  // independent transition: snap on, fade back off
   setTimeout(() => el.classList.remove("flash"), 90);
+}
+function revealChar(idx) {
+  const overlay = document.getElementById("textOverlay");
+  const span = overlay.children[idx];
+  if (span) span.classList.add("show");
 }
 function fireFlashes() {
   while (flashIdx < flatPoints.length && flatPoints[flashIdx].cum <= progress + EPS) {
     flashKey(flatPoints[flashIdx].el);
+    revealChar(flashIdx);
     flashIdx++;
   }
 }
@@ -558,7 +614,7 @@ let three = null;        // lazy-initialized bundle
 function toWorld(p) {
   return new THREE.Vector3(
     (p.x - STAGE_W / 2) / W_SCALE,
-    BASE_Y + p.zi * Z_STEP * state.zFactor,
+    BASE_Y + p.zi * Z_STEP * state.zFactor * state.zLift,
     (p.y - STAGE_H / 2) / W_SCALE
   );
 }
@@ -746,7 +802,9 @@ const state = {
   coloring: "fixed",
   text: "",
   view3d: false,
-  zFactor: 1.0           // 3D height compression/extension multiplier
+  zFactor: 1.0,          // 3D height compression/extension multiplier
+  zLift: 0,              // 0 = flat (2D), 1 = fully raised (3D) — animated
+  zLiftTarget: 0         // animation target
 };
 
 const $ = id => document.getElementById(id);
@@ -760,17 +818,33 @@ function speedPxPerSec() {
   return 60 * Math.pow(1.25, s - 1);
 }
 
+function buildTextOverlay() {
+  const overlay = $("textOverlay");
+  overlay.innerHTML = "";
+  // Cap at 50 characters displayed
+  const cap = Math.min(flatPoints.length, 100);
+  for (let i = 0; i < cap; i++) {
+    const span = document.createElement("span");
+    span.className = "char";
+    const ch = flatPoints[i].ch;
+    span.textContent = ch === " " ? "\u00A0" : ch;
+    overlay.appendChild(span);
+  }
+}
+
 function generate() {
+  removeFade();
   state.text = $("txt").value;
-  if (!state.text) { subpaths = []; flatPoints = []; totalLen = 0; dirty = true; return; }
+  if (!state.text) { subpaths = []; flatPoints = []; totalLen = 0; $("textOverlay").innerHTML = ""; dirty = true; return; }
   buildPath(state.text, state.spaceMode);
+  buildTextOverlay();
   progress = 0; flashIdx = 0;
 
   if (Number($("speed").value) >= 31) {
-    /* Instant mode — full geometry in a single frame */
     progress = totalLen;
     animating = false;
     fireFlashes();
+    if (fadeEnabled) setTimeout(applyFade, 500);
   } else {
     animating = true;
   }
@@ -823,21 +897,67 @@ $("txt").addEventListener("keydown", e => {
 $("btn3d").addEventListener("click", () => {
   state.view3d = !state.view3d;
   if (state.view3d && !three) init3D();
-  workspace.classList.toggle("mode3d", state.view3d);
   $("btn3d").textContent = state.view3d ? "View in 2D" : "View in 3D";
-  if (state.view3d) { resize3D(); if (three) three.lastBuilt = -1; }
+
+  if (state.view3d) {
+    // Show 3D view immediately, start flat, animate up
+    workspace.classList.add("mode3d");
+    resize3D();
+    state.zLift = 0;
+    state.zLiftTarget = 1;
+    if (three) three.lastBuilt = -1;
+  } else {
+    // Animate down to flat, then hide 3D view when done
+    state.zLiftTarget = 0;
+  }
   dirty = true;
 });
 
 /* Hide keyboard toggle */
 $("btnKb").addEventListener("click", () => {
   workspace.classList.toggle("hide-keys");
+  document.body.classList.toggle("hide-keys");
   const hidden = workspace.classList.contains("hide-keys");
   $("btnKb").textContent = hidden ? "Show Keys" : "Hide Keys";
   $("btnKb").classList.toggle("on", hidden);
   if (three && three.kbGroup) three.kbGroup.visible = !hidden;
   dirty = true;
 });
+
+/* Show Text toggle — 2D only */
+$("btnTxt").addEventListener("click", () => {
+  const overlay = $("textOverlay");
+  const on = !overlay.classList.contains("visible");
+  overlay.classList.toggle("visible", on);
+  $("btnTxt").textContent = on ? "Hide Text" : "Show Text";
+  $("btnTxt").classList.toggle("on", on);
+});
+
+/* Fade toggle — fades keys/text/grid when drawing finishes */
+let fadeEnabled = false;
+$("btnFade").addEventListener("click", () => {
+  fadeEnabled = !fadeEnabled;
+  $("btnFade").classList.toggle("on", fadeEnabled);
+  // If already finished, apply/remove immediately
+  if (!animating && progress >= totalLen && flatPoints.length) {
+    if (fadeEnabled) applyFade();
+    else removeFade();
+  }
+  if (!fadeEnabled) removeFade();
+});
+
+function applyFade() {
+  workspace.classList.add("faded");
+  document.body.classList.add("faded");
+  if (three && three.kbGroup) three.kbGroup.visible = false;
+}
+function removeFade() {
+  workspace.classList.remove("faded");
+  document.body.classList.remove("faded");
+  if (three && three.kbGroup) {
+    three.kbGroup.visible = !workspace.classList.contains("hide-keys");
+  }
+}
 
 /* 3D height — two-way sync between slider and editable input.
    Slider snaps to 0.05× increments (step=5 on a 0-400 range = 0.00–4.00×).
@@ -884,6 +1004,7 @@ window.addEventListener("resize", layout);
 
 /* Master animation loop */
 let lastTs = performance.now();
+const LIFT_SPEED = 1.2; // full lift in ~0.8 seconds
 function loop(ts) {
   requestAnimationFrame(loop);
   const dt = Math.min(0.05, (ts - lastTs) / 1000);
@@ -892,14 +1013,33 @@ function loop(ts) {
   if (animating) {
     const v = speedPxPerSec();
     progress = (v === Infinity) ? totalLen : progress + v * dt;
-    if (progress >= totalLen) { progress = totalLen; animating = false; }
+    if (progress >= totalLen) {
+      progress = totalLen; animating = false;
+      if (fadeEnabled) setTimeout(applyFade, 500);
+    }
     fireFlashes();
     dirty = true;
   }
 
-  if (dirty && !state.view3d) draw2D();
+  /* Animate zLift toward target */
+  if (Math.abs(state.zLift - state.zLiftTarget) > 0.001) {
+    const dir = state.zLiftTarget > state.zLift ? 1 : -1;
+    state.zLift += dir * LIFT_SPEED * dt;
+    // Clamp
+    if (dir > 0 && state.zLift > state.zLiftTarget) state.zLift = state.zLiftTarget;
+    if (dir < 0 && state.zLift < state.zLiftTarget) state.zLift = state.zLiftTarget;
+    if (three) three.lastBuilt = -1;
+    dirty = true;
+    // When collapsing back to 2D and fully flat, hide 3D view
+    if (state.zLiftTarget === 0 && state.zLift <= 0.001) {
+      state.zLift = 0;
+      if (!state.view3d) workspace.classList.remove("mode3d");
+    }
+  }
 
-  if (state.view3d && three) {
+  if (dirty && !state.view3d && state.zLift <= 0.001) draw2D();
+
+  if ((state.view3d || state.zLift > 0.001) && three) {
     if (dirty || three.lastBuilt !== progress) rebuild3D();
     three.controls.update();
     three.renderer.render(three.scene, three.camera);
